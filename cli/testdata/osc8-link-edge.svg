@@ -1,0 +1,27 @@
+<svg width="16ch" height="4em" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">
+    <style>
+        * {
+            font-family: Courier, monospace;
+            font-size: 14px;
+        }
+        tspan, text {
+            font-variant-ligatures: none;
+            dominant-baseline: central;
+            white-space: pre;
+            fill: #bbbbbb;
+        }
+        .bg {
+            stroke-width: "0.5px";
+        }
+    </style>
+    <rect width="100%" height="100%" x="0" y="0" style="fill: #000000"/>
+<text x="0ch" y="0.5em"><tspan>start</tspan></text>
+<text x="0ch" y="1.5em"><tspan>bad1bad2ok after</tspan></text>
+<text x="0ch" y="2.5em"><tspan>unclosed</tspan></text>
+<text x="0ch" y="3.5em"><tspan>plainXXend</tspan></text>
+<g class="links">
+<a xlink:href="https://nested.test/b" href="https://nested.test/b"><rect x="8ch" y="1em" width="2ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://unclosed.test/" href="https://unclosed.test/"><rect x="0ch" y="2em" width="8ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://unclosed.test/" href="https://unclosed.test/"><rect x="0ch" y="3em" width="10ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+</g>
+</svg>

@@ -1,0 +1,4 @@
+start
+]8;;javascript:alert(1\bad1]8;;\]8;;data:text/html,x\bad2]8;;\]8;;https://safe.test/a\]8;;https://nested.test/b\ok]8;;\ after
+]8;;https://unclosed.test/\unclosed
+]8Xmalformed\]1337;ignored\plain]8;;https://b/XXend

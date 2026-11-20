@@ -9,7 +9,10 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
+	"github.com/wader/ansisvg/internal/runewidth"
 	"github.com/wader/ansisvg/svgscreen/xydim"
 )
 
@@ -27,6 +30,10 @@ type Char struct {
 	Invert        bool
 	Italic        bool
 	Strikethrough bool
+	// Link is the OSC 8 hyperlink URI covering this char. Empty means
+	// the char is not part of a hyperlink. Unsafe URIs are filtered out
+	// at render time, see setupLinkRects.
+	Link string
 }
 
 type Line struct {
@@ -54,6 +61,20 @@ type bgRect struct {
 	Color  string
 }
 
+// linkRect is a clickable SVG hyperlink region covering one contiguous
+// run of text on a single line. Width is computed from the actual glyph
+// columns, so wide characters occupy twice as much space.
+type linkRect struct {
+	X      string
+	Y      string
+	Width  string
+	Height string
+	// Href is pre-validated by safeHref. The template.URL type bypasses
+	// html/template's built-in (http/https/mailto-only) URL filter while
+	// attribute escaping still applies.
+	Href template.URL
+}
+
 type SvgDom struct {
 	Width          string
 	Height         string
@@ -65,6 +86,7 @@ type SvgDom struct {
 	FgCustomColors []string
 	BgCustomColors []string
 	BgRects        []bgRect
+	LinkRects      []linkRect
 	TextElements   []textElement
 	ClassesUsed    struct {
 		Bold          bool
@@ -289,6 +311,101 @@ func (s *Screen) setupBgRects() {
 	}
 }
 
+// safeHref reports whether uri is safe to emit as an SVG hyperlink target.
+// Relative references and a small allowlist of click-only URI schemes are
+// accepted; dangerous schemes (javascript:, data:, vbscript:, file: ...)
+// and malformed references containing control characters are rejected.
+func safeHref(uri string) bool {
+	if uri == "" {
+		return false
+	}
+	// control characters and whitespace can never be part of a valid target
+	for _, r := range uri {
+		if r <= 0x20 || r == 0x7f || unicode.Is(unicode.Cf, r) {
+			return false
+		}
+	}
+	// relative references: fragment, absolute path, or scheme-relative
+	if strings.HasPrefix(uri, "#") || strings.HasPrefix(uri, "/") {
+		return true
+	}
+	colon := strings.IndexByte(uri, ':')
+	if colon < 0 {
+		// relative reference without scheme, e.g. "path/file.svg" or "?x=1"
+		return true
+	}
+	scheme := strings.ToLower(uri[:colon])
+	// scheme must be RFC 3986 ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+	if scheme == "" || !isToken(scheme) {
+		return false
+	}
+	switch scheme {
+	case "http", "https", "mailto", "ftp", "ftps", "ssh", "tel":
+		return true
+	default:
+		return false
+	}
+}
+
+func isToken(s string) bool {
+	for _, r := range s {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '+' || r == '-' || r == '.' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// setupLinkRects turns OSC 8 hyperlinks into one linkRect per contiguous
+// run of linked characters per line. A hyperlink spanning several lines
+// produces one rect per line, all pointing at the same URI. Rect width
+// follows actual glyph columns so wide characters are covered fully.
+// Unsafe or empty URIs are rendered as ordinary text without a link.
+func (s *Screen) setupLinkRects() {
+	for y, l := range s.Lines {
+		type tmpRect struct {
+			x    int
+			w    int
+			href string
+			safe bool
+		}
+		var current tmpRect
+		flush := func() {
+			if current.href == "" || !current.safe {
+				return
+			}
+			s.Dom.LinkRects = append(s.Dom.LinkRects, linkRect{
+				X:      s.columnCoordinate(float32(current.x), true),
+				Y:      s.rowCoordinate(float32(y), true),
+				Width:  s.columnCoordinate(float32(current.w), false),
+				Height: s.rowCoordinate(1, false),
+				Href:   template.URL(current.href),
+			})
+		}
+
+		for _, c := range l.Chars {
+			r, _ := utf8.DecodeRuneInString(c.Char)
+			charWidth := runewidth.RuneWidth(r)
+
+			if c.Link == "" || c.Link != current.href {
+				flush()
+				current = tmpRect{x: c.X, w: charWidth, href: c.Link, safe: safeHref(c.Link)}
+				continue
+			}
+
+			if c.X != current.x+current.w {
+				// gap (cursor movement, tabs) inside the link: start a new rect
+				flush()
+				current = tmpRect{x: c.X, w: charWidth, href: c.Link, safe: safeHref(c.Link)}
+				continue
+			}
+			current.w += charWidth
+		}
+		flush()
+	}
+}
+
 func setupCustomColors(revLookup map[string]int, clsTable *[]string) {
 	result := make([]string, len(revLookup))
 	for k, v := range revLookup {
@@ -333,6 +450,7 @@ func (s *Screen) Render(w io.Writer) error {
 
 	s.handleColorInversion()
 	s.setupBgRects()
+	s.setupLinkRects()
 
 	// Set up text elements
 	for _, l := range s.Lines {

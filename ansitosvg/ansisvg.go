@@ -101,6 +101,7 @@ func Convert(r io.Reader, w io.Writer, opts Options) error {
 				Invert:        ad.Invert,
 				Italic:        ad.Italic,
 				Strikethrough: ad.Strikethrough,
+				Link:          ad.Link,
 			})
 		}
 		lastX = ad.X + n

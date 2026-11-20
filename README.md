@@ -42,6 +42,12 @@ Example usage:
 
 Color themes are the ones from https://github.com/mbadolato/iTerm2-Color-Schemes
 
+## Hyperlinks
+
+[OSC 8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda) hyperlinks in the input (`OSC 8 ; params ; URI ST` … text … `OSC 8 ; ; ST`, terminated either by ST or BEL) are preserved as clickable SVG links. A hyperlink that spans color changes, wide characters or line breaks becomes one clickable region per line, sized to the actual glyph cells. The escape sequences themselves are never drawn.
+
+Only relative references and the URI schemes `http`, `https`, `mailto`, `ftp`, `ftps`, `ssh` and `tel` are emitted as links; dangerous schemes such as `javascript:`, `data:` and `file:` are stripped (the text is still rendered, without a link). Unclosed links stay active until end of input and a nested OSC 8 start replaces the current link.
+
 ## Install
 
 Pre-built binaries for Linux, macOS and Windows can be downloaded from [releases](https://github.com/wader/ansisvg/releases).

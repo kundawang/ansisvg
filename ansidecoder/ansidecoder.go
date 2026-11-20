@@ -9,6 +9,9 @@ import (
 	"io"
 	"regexp"
 	"strconv"
+	"strings"
+
+	"github.com/wader/ansisvg/internal/runewidth"
 )
 
 type State int
@@ -58,6 +61,27 @@ const SGRByte = 'm' // Select Graphic Rendition
 const CUFByte = 'C' // Cursor forward
 const FinalBytes = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~)"
 
+// parseOSC8 parses an OSC 8 payload ("8;params;URI"). It returns the
+// hyperlink URI and true. An empty URI means the hyperlink ends. Other
+// OSC commands and malformed OSC 8 payloads return ok=false and leave
+// the current hyperlink state untouched.
+func parseOSC8(payload string) (uri string, ok bool) {
+	if !strings.HasPrefix(payload, "8") {
+		return "", false
+	}
+	rest := payload[1:]
+	if rest != "" && rest[0] != ';' {
+		return "", false
+	}
+	// the URI follows the second ';' (the one after params); params
+	// themselves never contain ';', and the URI itself may contain them
+	i := strings.Index(rest[1:], ";")
+	if i < 0 {
+		return "", false
+	}
+	return rest[i+2:], true
+}
+
 type Color struct {
 	N   int
 	RGB []int
@@ -87,6 +111,9 @@ type Decoder struct {
 	Invert        bool
 	Italic        bool
 	Strikethrough bool
+	// Link is the URI of the OSC 8 hyperlink active for the last
+	// returned rune. Empty string means the rune is not part of a link.
+	Link string
 
 	MaxX  int
 	MaxY  int
@@ -97,6 +124,10 @@ type Decoder struct {
 	ny        int
 	readBuf   *bufio.Reader
 	paramsBuf *bytes.Buffer
+	oscBuf    *bytes.Buffer
+	// activeLink is the currently open OSC 8 hyperlink URI, copied to
+	// Link for every rune returned while it is open.
+	activeLink string
 }
 
 // NewDecoder returns new ANSI decoder that is a io.RuneReader. See ReadRune for details.
@@ -106,6 +137,7 @@ func NewDecoder(r io.Reader) *Decoder {
 		Background: Color{N: -1},
 		readBuf:    bufio.NewReader(r),
 		paramsBuf:  &bytes.Buffer{},
+		oscBuf:     &bytes.Buffer{},
 	}
 }
 
@@ -169,6 +201,7 @@ func (d *Decoder) ReadRune() (r rune, size int, err error) {
 			default:
 				d.X = d.nx
 				d.Y = d.ny
+				d.Link = d.activeLink
 
 				if d.Y > d.MaxY {
 					d.MaxY = d.Y
@@ -183,10 +216,12 @@ func (d *Decoder) ReadRune() (r rune, size int, err error) {
 				case '\t':
 					d.nx += 8 - (d.nx % 8)
 				default:
-					if d.X > d.MaxX {
-						d.MaxX = d.X
+					d.nx += runewidth.RuneWidth(r)
+					// MaxX is the last occupied cell; wide runes occupy
+					// their start cell plus the cell after it
+					if d.nx-1 > d.MaxX {
+						d.MaxX = d.nx - 1
 					}
-					d.nx++
 				}
 
 				if (d.LineWrap && d.TerminalWidth != 0) && d.nx >= d.TerminalWidth {
@@ -296,21 +331,46 @@ func (d *Decoder) ReadRune() (r rune, size int, err error) {
 		case StateOSC:
 			switch r {
 			case BELRune:
-				d.State = StateCopy
+				d.finishOSC()
 			case ESCRune:
 				d.State = StateOSCSeenESC
 			default:
-				// nop, skip
+				// accumulate OSC payload, control bytes are never returned
+				if _, err := d.oscBuf.WriteRune(r); err != nil {
+					return 0, 0, err
+				}
 			}
 		case StateOSCSeenESC:
 			switch r {
 			case '\\':
-				d.State = StateCopy
+				// ST (String Terminator)
+				d.finishOSC()
 			default:
-				// nop, skip
+				// bad escape: this was not an ST terminator, return to
+				// Copy state and reprocess the rune as ordinary input
+				d.State = StateCopy
+				d.oscBuf.Reset()
+				if err := d.readBuf.UnreadRune(); err != nil {
+					return 0, 0, err
+				}
 			}
 		default:
 			panic("unreachable")
 		}
+	}
+}
+
+// finishOSC processes an accumulated OSC sequence. Only OSC 8 hyperlink
+// sequences affect state: a new URI (including an empty one ending the
+// link) replaces any currently active link, which also handles nested
+// starts. Any other OSC command or a malformed sequence is ignored and
+// leaves the active link untouched.
+func (d *Decoder) finishOSC() {
+	payload := d.oscBuf.String()
+	d.oscBuf.Reset()
+	d.State = StateCopy
+
+	if uri, ok := parseOSC8(payload); ok {
+		d.activeLink = uri
 	}
 }

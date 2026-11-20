@@ -1,0 +1,35 @@
+<svg width="16ch" height="3em" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">
+    <style>
+        * {
+            font-family: Courier, monospace;
+            font-size: 14px;
+        }
+        tspan, text {
+            font-variant-ligatures: none;
+            dominant-baseline: central;
+            white-space: pre;
+            fill: #bbbbbb;
+        }
+        .bg {
+            stroke-width: "0.5px";
+        }
+        .bold {
+            font-weight: bold;
+        }
+        <!-- Foreground ANSI colors -->
+        .fa1 { fill: #bb0000; }
+        .fa2 { fill: #00bb00; }
+    </style>
+    <rect width="100%" height="100%" x="0" y="0" style="fill: #000000"/>
+<text x="0ch" y="0.5em"><tspan x="0ch" class="fa1">红</tspan><tspan x="1ch"> </tspan><tspan x="2ch" class="fa2">绿</tspan><tspan x="3ch"> </tspan><tspan x="4ch"> </tspan><tspan x="5ch">l</tspan><tspan x="6ch">i</tspan><tspan x="7ch">n</tspan><tspan x="8ch">k</tspan></text>
+<text x="0ch" y="1.5em"><tspan x="0ch" class="bold">n</tspan><tspan x="1ch" class="bold">e</tspan><tspan x="2ch" class="bold">x</tspan><tspan x="3ch" class="bold">t</tspan><tspan x="4ch" class="bold"> </tspan><tspan x="5ch" class="bold">行</tspan><tspan x="6ch"> </tspan><tspan x="7ch"> </tspan><tspan x="8ch">e</tspan><tspan x="9ch">n</tspan><tspan x="10ch">d</tspan><tspan x="11ch"> </tspan><tspan x="12ch">t</tspan><tspan x="13ch">a</tspan><tspan x="14ch">i</tspan><tspan x="15ch">l</tspan></text>
+<text x="0ch" y="2.5em"><tspan x="0ch">m</tspan><tspan x="1ch">a</tspan><tspan x="2ch">i</tspan><tspan x="3ch">l</tspan><tspan x="4ch"> </tspan><tspan x="5ch">d</tspan><tspan x="6ch">o</tspan><tspan x="7ch">n</tspan><tspan x="8ch">e</tspan></text>
+<g class="links">
+<a xlink:href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1" href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1"><rect x="0ch" y="0em" width="2ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1" href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1"><rect x="2ch" y="0em" width="2ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1" href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1"><rect x="4ch" y="0em" width="5ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1" href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1"><rect x="0ch" y="1em" width="7ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1" href="https://example.com/docs/%e8%b7%af%e5%be%84?x=1"><rect x="7ch" y="1em" width="4ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+<a xlink:href="mailto:hi@example.com" href="mailto:hi@example.com"><rect x="0ch" y="2em" width="4ch" height="1em" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+</g>
+</svg>

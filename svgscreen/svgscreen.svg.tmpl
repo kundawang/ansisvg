@@ -108,4 +108,11 @@ whitespace only tspan:s preventing underline to be properly rendered.
 {{- range $li, $l := .Dom.TextElements}}
 <text x="{{$l.X}}" y="{{$l.Y}}">{{- range $si, $s := $l.TextSpans}}<tspan{{if ne $s.X ""}} x="{{ $s.X }}"{{end}}{{if ne $s.Class ""}} class="{{$s.Class}}"{{end}}>{{$s.Content}}</tspan>{{- end}}</text>
 {{- end}}
+{{- if len $.Dom.LinkRects}}
+<g class="links">
+{{- range $r := .Dom.LinkRects}}
+<a xlink:href="{{$r.Href}}" href="{{$r.Href}}"><rect x="{{$r.X}}" y="{{$r.Y}}" width="{{$r.Width}}" height="{{$r.Height}}" fill="none" pointer-events="all" style="cursor: pointer"/></a>
+{{- end}}
+</g>
+{{- end}}
 </svg>
